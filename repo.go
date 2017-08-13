@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 
-	"github.com/gorilla/context"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"time"
@@ -52,25 +51,20 @@ type Bill struct {
 }
 
 type Repo struct {
-	bs *mgo.Database
+	mongoDB *mgo.Database
+	mongoSession *mgo.Session
 }
 
 var RP Repo
 
-func GetDB(r *http.Request, name string) *mgo.Database {
-	if rv := context.Get(r, name); rv != nil {
-		return rv.(*mgo.Database)
-	}
-	return nil
-}
-
 func (r Repo) Request(req *http.Request) *Repo {
-	return &Repo{bs: GetDB(req, "beacon")}
+	session := getMongoSession().Clone()
+	return &Repo{mongoDB: session.DB("pcwutl") ,mongoSession: session }
 }
 
 func (r Repo) CustomerFindAll() ([]Customer, error) {
 	var rtn []Customer
-	if err := r.bs.C("customers").Find(nil).All(&rtn); err != nil {
+	if err := r.mongoDB.C("customers").Find(nil).All(&rtn); err != nil {
 		return []Customer{}, err
 	}
 	return rtn, nil
@@ -78,29 +72,33 @@ func (r Repo) CustomerFindAll() ([]Customer, error) {
 
 func (r Repo) CustomerFind(selector interface{}) (Customer, error) {
 	var rtn Customer
-	if err := r.bs.C("customers").Find(selector).One(&rtn); err != nil {
+	if err := r.mongoDB.C("customers").Find(selector).One(&rtn); err != nil {
 		return Customer{}, err
 	}
 	return rtn, nil
 }
 
 func (r Repo) CustomerUpdate(selector interface{}, update interface{}) error {
-	if err := r.bs.C("customers").Update(selector, bson.M{"$set": update}); err != nil {
+	if err := r.mongoDB.C("customers").Update(selector, bson.M{"$set": update}); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r Repo) CustomerInsert(customer interface{}) error {
-	if err := r.bs.C("customers").Insert(customer); err != nil {
+	defer r.mongoSession.Clone()
+	if err := r.mongoDB.C("customers").Insert(customer); err != nil {
 		return err
 	}
 	return nil
+
+	//// redirect to it
+	//http.Redirect(w, r, “/comments/”+c.ID.Hex(), http.StatusTemporaryRedirect)
 }
 
 func (r Repo) AssetFindAll() ([]Asset, error) {
 	var rtn []Asset
-	if err := r.bs.C("assets").Find(nil).All(&rtn); err != nil {
+	if err := r.mongoDB.C("assets").Find(nil).All(&rtn); err != nil {
 		return []Asset{}, err
 	}
 	return rtn, nil
@@ -108,7 +106,7 @@ func (r Repo) AssetFindAll() ([]Asset, error) {
 
 func (r Repo) AssetFind(selector interface{}) (Asset, error) {
 	var rtn Asset
-	if err := r.bs.C("assets").Find(selector).One(&rtn); err != nil {
+	if err := r.mongoDB.C("assets").Find(selector).One(&rtn); err != nil {
 		return Asset{}, err
 	}
 	return rtn, nil
@@ -116,21 +114,21 @@ func (r Repo) AssetFind(selector interface{}) (Asset, error) {
 
 func (r Repo) AssetFindByID(assetID string) (Asset, error) {
 	var rtn Asset
-	if err := r.bs.C("assets").FindId(bson.ObjectIdHex(assetID)).One(&rtn); err != nil {
+	if err := r.mongoDB.C("assets").FindId(bson.ObjectIdHex(assetID)).One(&rtn); err != nil {
 		return Asset{}, err
 	}
 	return rtn, nil
 }
 
 func (r Repo) AssetUpdate(selector interface{}, update interface{}) error {
-	if err := r.bs.C("assets").Update(selector, bson.M{"$set": update}); err != nil {
+	if err := r.mongoDB.C("assets").Update(selector, bson.M{"$set": update}); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r Repo) AssetInsert(asset interface{}) error {
-	if err := r.bs.C("assets").Insert(asset); err != nil {
+	if err := r.mongoDB.C("assets").Insert(asset); err != nil {
 		return err
 	}
 	return nil
@@ -139,7 +137,7 @@ func (r Repo) AssetInsert(asset interface{}) error {
 // alias
 func (r Repo) AliasFindAll() ([]Alias, error) {
 	var rtn []Alias
-	if err := r.bs.C("aliases").Find(nil).All(&rtn); err != nil {
+	if err := r.mongoDB.C("aliases").Find(nil).All(&rtn); err != nil {
 		return []Alias{}, err
 	}
 	return rtn, nil
@@ -147,28 +145,28 @@ func (r Repo) AliasFindAll() ([]Alias, error) {
 
 func (r Repo) AliasFind(selector interface{}) (Alias, error) {
 	var rtn Alias
-	if err := r.bs.C("aliases").Find(selector).One(&rtn); err != nil {
+	if err := r.mongoDB.C("aliases").Find(selector).One(&rtn); err != nil {
 		return Alias{}, err
 	}
 	return rtn, nil
 }
 
 func (r Repo) AliasUpdate(selector interface{}, update interface{}) error {
-	if err := r.bs.C("aliases").Update(selector, bson.M{"$set": update}); err != nil {
+	if err := r.mongoDB.C("aliases").Update(selector, bson.M{"$set": update}); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r Repo) AliasInsert(alias interface{}) error {
-	if err := r.bs.C("aliases").Insert(alias); err != nil {
+	if err := r.mongoDB.C("aliases").Insert(alias); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r Repo) TransactionInsert(t interface{}) error {
-	if err := r.bs.C("transactions").Insert(t); err != nil {
+	if err := r.mongoDB.C("transactions").Insert(t); err != nil {
 		return err
 	}
 	return nil
@@ -176,7 +174,7 @@ func (r Repo) TransactionInsert(t interface{}) error {
 
 func (r Repo) TransactionFind(selector interface{}) (Transaction, error) {
 	var rtn Transaction
-	if err := r.bs.C("transactions").Find(selector).One(&rtn); err != nil {
+	if err := r.mongoDB.C("transactions").Find(selector).One(&rtn); err != nil {
 		return Transaction{}, err
 	}
 	return rtn, nil
@@ -185,7 +183,7 @@ func (r Repo) TransactionFind(selector interface{}) (Transaction, error) {
 func (r Repo) TransactionFindByType(ownerID, transactionType string, limit int) ([]Transaction, error) {
 	var rtn []Transaction
 	s := bson.M{"owner_id": bson.ObjectIdHex(ownerID), "type": transactionType}
-	err := r.bs.C("transactions").Find(s).Sort("-_id").Limit(limit).All(&rtn)
+	err := r.mongoDB.C("transactions").Find(s).Sort("-_id").Limit(limit).All(&rtn)
 	if err != nil {
 		return []Transaction{}, err
 	}
@@ -195,7 +193,7 @@ func (r Repo) TransactionFindByType(ownerID, transactionType string, limit int) 
 func (r Repo) TransactionFindFavorites(ownerID, transactionType string) ([]Transaction, error) {
 	var rtn []Transaction
 	s := bson.M{"favorite": bson.M{"$exists": true}, "owner_id": bson.ObjectIdHex(ownerID), "type": transactionType}
-	err := r.bs.C("transactions").Find(s).Sort("-_id").All(&rtn)
+	err := r.mongoDB.C("transactions").Find(s).Sort("-_id").All(&rtn)
 	if err != nil {
 		return []Transaction{}, err
 	}
@@ -203,7 +201,7 @@ func (r Repo) TransactionFindFavorites(ownerID, transactionType string) ([]Trans
 }
 
 func (r Repo) TransactionUpdate(selector interface{}, update interface{}) error {
-	if err := r.bs.C("transactions").Update(selector, bson.M{"$set": update}); err != nil {
+	if err := r.mongoDB.C("transactions").Update(selector, bson.M{"$set": update}); err != nil {
 		return err
 	}
 	return nil
@@ -219,7 +217,7 @@ func (r Repo) TransactionAddFavorite(transactionID, alias string) error {
 
 func (r Repo) TransactionUnsetField(transactionID, field string) error {
 	update := bson.M{"$unset": bson.M{field: ""}}
-	if err := r.bs.C("transactions").UpdateId(bson.ObjectIdHex(transactionID), update); err != nil {
+	if err := r.mongoDB.C("transactions").UpdateId(bson.ObjectIdHex(transactionID), update); err != nil {
 		return err
 	}
 	return nil
@@ -227,7 +225,7 @@ func (r Repo) TransactionUnsetField(transactionID, field string) error {
 
 func (r Repo) BillFind(selector interface{}) (Bill, error) {
 	var rtn Bill
-	if err := r.bs.C("bills").Find(selector).One(&rtn); err != nil {
+	if err := r.mongoDB.C("bills").Find(selector).One(&rtn); err != nil {
 		return Bill{}, err
 	}
 	return rtn, nil
@@ -235,21 +233,21 @@ func (r Repo) BillFind(selector interface{}) (Bill, error) {
 
 func (r Repo) BillFindAll() ([]Bill, error) {
 	var rtn []Bill
-	if err := r.bs.C("bills").Find(nil).All(&rtn); err != nil {
+	if err := r.mongoDB.C("bills").Find(nil).All(&rtn); err != nil {
 		return []Bill{}, err
 	}
 	return rtn, nil
 }
 
 func (r Repo) BillUpdate(selector interface{}, update interface{}) error {
-	if err := r.bs.C("bills").Update(selector, bson.M{"$set": update}); err != nil {
+	if err := r.mongoDB.C("bills").Update(selector, bson.M{"$set": update}); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r Repo) BillInsert(bill interface{}) error {
-	if err := r.bs.C("bills").Insert(bill); err != nil {
+	if err := r.mongoDB.C("bills").Insert(bill); err != nil {
 		return err
 	}
 	return nil

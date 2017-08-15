@@ -41,7 +41,23 @@ func StoreCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func StoreUpdate(w http.ResponseWriter, r *http.Request) {
+	log.Debugln("StoreUpdate")
 
+	var s Store
+	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
+		log.Errorln("decode json error:", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	dBcontroller := Controller.RequestDBSession()
+	if err := dBcontroller.StoreUpdate(bson.M{"_id": s.ID}, s); err != nil {
+		log.Errorln("mongo error:", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func StoreDelete(w http.ResponseWriter, r *http.Request) {

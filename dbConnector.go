@@ -54,6 +54,17 @@ func (c DBcontroller) StoreInsert(store interface{}) error {
 	return nil
 }
 
+func (c DBcontroller) StoreUpdate(selector interface{}, update interface{}) error {
+
+	session := c.mongoSession.Clone()
+	defer session.Close()
+
+	if err := session.DB("pcwutl").C("store").Update(selector, bson.M{"$set": update}); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c DBcontroller) StoreFindByName(selector interface{}) (Store,error) {
 	session := c.mongoSession.Clone()
 	defer session.Close()

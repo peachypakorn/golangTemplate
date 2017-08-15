@@ -24,33 +24,18 @@ func StoreCreate(w http.ResponseWriter, r *http.Request) {
 	s.DateAdd = time.Now()
 
 	dBcontroller := Controller.RequestDBSession()
-	store ,err := dBcontroller.StoreFindByName(bson.M{"store_name":s.StoreName});
-	if err != nil && err.Error() != "not found"{
-		log.Errorln("mongo error:", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if (Store{}) != store{
-		log.Errorln("duplicate store name", store.StoreName)
-		w.WriteHeader(http.StatusConflict)
-		return
-	}
+	s.ID = bson.NewObjectId()
 
 	if err := dBcontroller.StoreInsert(&s); err != nil {
 		log.Errorln("mongo error:", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	store ,err = dBcontroller.StoreFindByName(bson.M{"store_name":s.StoreName});
-	if err != nil || (Store{}) == store {
-		log.Errorln("mongo error:", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+
 	JSONResponse(w, http.StatusCreated, ResponseNormal{
 		"00",
 		"create store success",
-		store.ID.Hex(),
+		s.ID.Hex(),
 	})
 
 }

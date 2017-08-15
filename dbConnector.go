@@ -33,8 +33,20 @@ func (c DBcontroller) RequestDBSession() *DBcontroller {
 }
 
 func (c DBcontroller) StoreInsert(store interface{}) error {
+
 	session := c.mongoSession.Clone()
 	defer session.Close()
+
+	index := mgo.Index{
+		Key:       []string {"store_name"},
+		Unique:     true,
+		DropDups:   true,
+		Background: true,
+		Sparse:     true,
+	}
+	if err := session.DB("pcwutl").C("store").EnsureIndex(index); err != nil {
+		return err
+	}
 
 	if err := session.DB("pcwutl").C("store").Insert(store); err != nil {
 		return err

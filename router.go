@@ -51,10 +51,10 @@ var routes = Routes{
 		Admin,
 	},
 	Route{
-		"StoreGet",
+		"StoreFind",
 		"GET",
-		"/store/{storeID}",
-		StoreGetByID,
+		"/store",
+		StoreFind,
 		Admin,
 	},
 }

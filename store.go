@@ -60,14 +60,46 @@ func StoreUpdate(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func StoreFind(w http.ResponseWriter, r *http.Request) {
+	//s := mux.Vars(r)
+	//log.Errorln("mongo error:", s)
+	key := r.FormValue("storename")
+	if key == "" {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	defer r.Body.Close()
+
+	selector := Store{StoreName:key}
+
+	dBcontroller := Controller.RequestDBSession()
+	result,err := dBcontroller.StoreFindByName(selector)
+	if err != nil {
+		log.Errorln("mongo error:", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	JSONResponse(w, http.StatusFound, result)
+
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func StoreDelete(w http.ResponseWriter, r *http.Request) {
 
 }
 
 func StoreGetAll(w http.ResponseWriter, r *http.Request) {
-
+	dBcontroller := Controller.RequestDBSession()
+	result,err := dBcontroller.StoreFindAll()
+	if err != nil {
+		log.Errorln("mongo error:", err)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	JSONResponse(w, http.StatusFound, result)
 }
 
 func StoreGetByID(w http.ResponseWriter, r *http.Request) {
 	r.Header.Get("storeID")
 }
+

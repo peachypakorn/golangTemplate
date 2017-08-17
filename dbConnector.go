@@ -76,4 +76,15 @@ func (c DBcontroller) StoreFindByName(selector interface{}) (Store,error) {
 	return rtn,nil
 }
 
+func (c DBcontroller) StoreFindAll() ([] Store,error) {
+	session := c.mongoSession.Clone()
+	defer session.Close()
+
+	var rtn [] Store
+	if err := session.DB("pcwutl").C("store").Find(nil).All(&rtn); err != nil {
+		return [] Store{}, err
+	}
+	return rtn , nil
+}
+
 

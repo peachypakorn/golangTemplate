@@ -15,9 +15,51 @@ type Route struct {
 	AuthMethod  int
 }
 
+const Admin = 0
+const NoAuth = 0
+const LoginNeeded = 0
+
 type Routes []Route
 
 var routes = Routes{
+	Route{
+		"StoreCreate",
+		"POST",
+		"/store",
+		StoreCreate,
+		Admin,
+	},
+	Route{
+		"StoreUpdate",
+		"PUT",
+		"/store",
+		StoreUpdate,
+		Admin,
+	},
+	Route{
+		"StoreDelete",
+		"DELETE",
+		"/store",
+		StoreDelete,
+		Admin,
+	},
+	Route{
+		"StoreGetAll",
+		"GET",
+		"/stores",
+		StoreGetAll,
+		Admin,
+	},
+	Route{
+		"StoreFind",
+		"GET",
+		"/store",
+		StoreFind,
+		Admin,
+	},
+}
+
+var routes2 = Routes{
 	Route{
 		"CustomerGetAll",
 		"GET",
@@ -171,11 +213,19 @@ var routes = Routes{
 	},
 }
 
+const (
+	NotAuthen = iota
+
+)
+
 func handleAuthenMethod(handler http.Handler, r Route) http.Handler {
 	switch r.AuthMethod {
-	case 0:
-	}
+	case Admin:
 
+	//case NoAuth:
+	//
+	//case LoginNeeded:
+	}
 	return handler
 }
 

@@ -7,6 +7,12 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+type ResponseNormal struct {
+	Code          string  `json:"responseCode"`
+	Description   string  `json:"responseDescription"`
+	StoreID		  string  `json:"storeID"`
+}
+
 func JSONResponse(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(status)

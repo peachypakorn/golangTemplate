@@ -23,6 +23,16 @@ type Routes []Route
 
 var routes = Routes{
 	Route{
+		"RecommendedProducts",
+		"GET",
+		"/users/{uid}/recommendedProducts",
+		getRecommendedProducts,
+		Admin,
+	},
+}
+
+var routes3 = Routes{
+	Route{
 		"StoreCreate",
 		"POST",
 		"/store",

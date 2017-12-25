@@ -86,5 +86,26 @@ func (c DBcontroller) StoreFindAll() ([] Store,error) {
 	}
 	return rtn , nil
 }
+type Cus struct{
+	ID string `json:"id" bson:"_id,omitempty"`
+	Uid string `json:"uid" bson:"uid,omitempty"`
+	Pid string `json:"pid" bson:"pid,omitempty"`
+	Score string `json:"score" bson:"score,omitempty"`
+}
+
+
+
+func (c DBcontroller) GetRecommendedProducts(selector interface{}) ([]Cus,error) {
+	session := c.mongoSession.Clone()
+	defer session.Close()
+
+	var rtn []Cus
+	if err := session.DB("mltesting").C("recommnendedProducts").Find(selector).All(&rtn); err != nil {
+		return []Cus{},err
+	}
+	return rtn,nil
+}
+
+
 
 

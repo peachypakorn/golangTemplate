@@ -29,6 +29,13 @@ var routes = Routes{
 		getRecommendedProducts,
 		Admin,
 	},
+	Route{
+		"AddMockProducts",
+		"GET",
+		"/addProduct",
+		addMockProducts,
+		Admin,
+	},
 }
 
 var routes3 = Routes{

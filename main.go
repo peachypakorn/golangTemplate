@@ -19,6 +19,7 @@ func startMongo() {
 		log.Errorln("error mongo:", err)
 	}
 	session.SetMode(mgo.Monotonic, true)
+	session.SetPoolLimit(3000)
 	mongoSession = session
 }
 
